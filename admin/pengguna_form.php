@@ -1,0 +1,15 @@
+<?php
+/** Form pembuatan/perubahan akun dengan password hash. */
+require_once __DIR__ . '/../auth/session.php';
+require_once __DIR__ . '/../includes/helpers.php';
+$user=require_role('admin');
+$id=valid_nonnegative_int($_GET['id'] ?? '0');if($id===null){http_response_code(400);exit('ID pengguna tidak valid.');}
+$row=['id'=>0,'full_name'=>'','username'=>'','role'=>'peminjam','identity_no'=>'','user_type'=>'mahasiswa','is_active'=>1];
+if($id>0){$stmt=db()->prepare('SELECT id,full_name,username,role,identity_no,user_type,is_active FROM users WHERE id=?');$stmt->execute([$id]);$found=$stmt->fetch();if(!$found){http_response_code(404);exit('Pengguna tidak ditemukan.');}$row=$found;}
+$pageTitle=$id>0?'Edit Pengguna':'Tambah Pengguna';$activeMenu='pengguna';require __DIR__.'/../layouts/header.php';
+?>
+<section class="page-heading"><div><p class="eyebrow">Akun akses</p><h2><?= e($pageTitle) ?></h2><p class="muted">Role admin hanya untuk Admin/Laboran; mahasiswa dan dosen menggunakan role peminjam.</p></div><a class="btn btn-light" href="<?= e(url('admin/pengguna.php')) ?>">Kembali</a></section>
+<section class="card form-card"><form method="post" action="<?= e(url('admin/pengguna_action.php')) ?>"><?= csrf_field() ?><input type="hidden" name="action" value="save"><input type="hidden" name="id" value="<?= (int)$row['id'] ?>"><div class="form-grid">
+<label class="field"><span>Nama lengkap *</span><input name="full_name" maxlength="100" required value="<?= e($row['full_name']) ?>"></label><label class="field"><span>Username *</span><input name="username" maxlength="50" required autocomplete="username" value="<?= e($row['username']) ?>"></label><label class="field"><span>Role *</span><select name="role"><option value="peminjam"<?= $row['role']==='peminjam'?' selected':'' ?>>Peminjam</option><option value="admin"<?= $row['role']==='admin'?' selected':'' ?>>Admin/Laboran</option></select></label><label class="field"><span>Jenis pengguna *</span><select name="user_type"><option value="mahasiswa"<?= $row['user_type']==='mahasiswa'?' selected':'' ?>>Mahasiswa</option><option value="dosen"<?= $row['user_type']==='dosen'?' selected':'' ?>>Dosen</option><option value="laboran"<?= $row['user_type']==='laboran'?' selected':'' ?>>Laboran</option></select></label><label class="field"><span>NIM / NIDN</span><input name="identity_no" maxlength="30" value="<?= e($row['identity_no']) ?>"></label><label class="field"><span><?= $id>0?'Password baru (kosongkan untuk tetap memakai password saat ini)':'Password *' ?></span><input type="password" name="password" <?= $id>0?'':'required' ?> autocomplete="new-password"></label>
+<?php if($id>0): ?><label class="field"><span>Status akun</span><select name="is_active"><option value="1"<?= (int)$row['is_active']===1?' selected':'' ?>>Aktif</option><option value="0"<?= (int)$row['is_active']===0?' selected':'' ?>>Nonaktif</option></select></label><?php endif; ?></div><div class="form-actions"><a class="btn btn-light" href="<?= e(url('admin/pengguna.php')) ?>">Batal</a><button class="btn" type="submit">Simpan pengguna</button></div></form></section>
+<?php require __DIR__.'/../layouts/footer.php'; ?>
